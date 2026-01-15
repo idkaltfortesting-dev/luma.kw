@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Luma Store</title>
+<style>
+body { margin:0; font-family: Arial,sans-serif; background-color:#fde6ee; transition:0.3s; }
+body.dark { background:#1a1a1a; color:#eee; }
+header { background:#fff; padding:20px; text-align:center; border-bottom:2px solid #f2c6d6; position:sticky; top:0; z-index:1000; }
+header img { width:120px; height:120px; border-radius:50%; border:3px solid #f2c6d6; }
+.lang-buttons button { margin:5px; padding:8px 16px; border-radius:20px; border:none; background:#d14c7b; color:#fff; font-weight:bold; cursor:pointer; }
+.banner-container { background:#f5f0e1; padding:10px; overflow:hidden; }
+.banner span { display:inline-block; white-space:nowrap; animation:scroll 15s linear infinite; font-weight:bold; cursor:pointer; }
+@keyframes scroll { 0%{transform:translateX(100%)} 100%{transform:translateX(-100%)} }
+.categories,.search-cart{text-align:center;margin:10px}
+.categories button,.search-cart button{padding:8px 16px;border-radius:20px;border:none;background:#ff85b3;color:#fff;font-weight:bold;cursor:pointer;}
+.search-cart input{padding:8px;width:220px;border-radius:20px;border:1px solid #ccc;}
+.products{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:15px; padding:20px;}
+.product{background:#fff;padding:10px;border-radius:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.1); cursor:pointer;}
+.product img{width:100px;height:100px;border-radius:10px;}
+.price{color:#d14c7b;font-weight:bold;}
+.order-btn{margin-top:5px;padding:6px 12px;border-radius:20px;background:#d14c7b;color:#fff;border:none;font-weight:bold;width:100%;}
+.lang{display:none;}
+.lang.active{display:block;}
+.rtl{direction:rtl;text-align:right;}
+#cartModal{position:fixed;top:10%;right:10%;width:320px;background:#fff;border-radius:12px;border:2px solid #d14c7b;padding:10px;display:none;z-index:2000;}
+.cart-item{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:5px;}
+#productPopup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:3000;}
+#productPopup .box{background:#fff;max-width:350px;margin:15% auto;padding:20px;border-radius:12px;text-align:center;position:relative;}
+#productPopup span{position:absolute;top:10px;right:15px;cursor:pointer;}
+#accountDiv{margin:10px;text-align:center;}
+#accountDiv input{margin:5px;padding:6px;border-radius:8px;border:1px solid #ccc;}
+footer { background:#fff; padding:20px; text-align:center; border-top:2px solid #f2c6d6; }
+body.dark footer { background:#333; border-top:2px solid #555; }
+.socials img { width:25px; margin:0 5px; vertical-align:middle; }
+</style>
+</head>
+<body>
+
+<header>
+<img src="product3.jpeg" alt="Logo">
+<div class="lang-buttons">
+<button onclick="setLang('en')">English</button>
+<button onclick="setLang('ar')">العربية</button>
+<button onclick="setLang('fa')">فارسی</button>
+<button onclick="toggleDark()">🌙</button>
+</div>
+</header>
+
+<!-- MAIN BANNER -->
+<div class="banner-container">
+  <div class="banner"><span>💄 Makeup ✨ Skincare 💎 Use code <strong>FIRST15</strong> to get 15% off your first order!</span></div>
+</div>
+
+<!-- INSTAGRAM MOVING BANNER -->
+<div class="banner-container">
+  <div class="banner"><span onclick="window.open('https://www.instagram.com/luma.kw2','_blank')">📸 Follow us on Instagram <strong>@Luma.Kw2</strong> ✨ New arrivals daily 💄 Skincare • Makeup • Beauty ✨</span></div>
+</div>
+
+<!-- ACCOUNT LOGIN/REGISTER -->
+<div id="accountDiv">
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+<button onclick="register()">Register</button>
+<button onclick="login()">Login</button>
+<div id="welcome"></div>
+</div>
+
+<!-- LANGUAGES -->
+<div class="lang active" id="en">
+<div class="categories">
+<button onclick="filterCategory('All')">All</button>
+<button onclick="filterCategory('Makeup')">Makeup</button>
+<button onclick="filterCategory('Hair')">Hair</button>
+<button onclick="filterCategory('Brows')">Brows</button>
+</div>
+
+<div class="search-cart">
+<input id="search" placeholder="Search products..." onkeyup="searchProducts()">
+<button onclick="toggleCart()">🛒 Cart (<span id="cartCount">0</span>)</button>
+</div>
+</div>
+
+<div class="lang rtl" id="ar">
+<div class="categories">
+<button onclick="filterCategory('All')">الكل</button>
+<button onclick="filterCategory('Makeup')">مكياج</button>
+<button onclick="filterCategory('Hair')">الشعر</button>
+<button onclick="filterCategory('Brows')">الحواجب</button>
+</div>
+<div class="search-cart">
+<input placeholder="ابحث عن منتج..." onkeyup="searchProducts()">
+<button onclick="toggleCart()">🛒 السلة (<span id="cartCount">0</span>)</button>
+</div>
+</div>
+
+<div class="lang rtl" id="fa">
+<div class="categories">
+<button onclick="filterCategory('All')">همه</button>
+<button onclick="filterCategory('Makeup')">آرایش</button>
+<button onclick="filterCategory('Hair')">مو</button>
+<button onclick="filterCategory('Brows')">ابرو</button>
+</div>
+<div class="search-cart">
+<input placeholder="جستجوی محصول..." onkeyup="searchProducts()">
+<button onclick="toggleCart()">🛒 سبد (<span id="cartCount">0</span>)</button>
+</div>
+</div>
+
+<!-- PRODUCTS GRID -->
+<section class="products">
+
+<!-- MAKEUP -->
+<div class="product" data-category="Makeup" onclick="openPopup('Liquid Blush',1,'product4.jpeg')">
+<img src="product4.jpeg">
+<h3>Liquid Blush</h3>
+<div class="price" data-price="1">1 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Liquid Blush',1)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Makeup" onclick="openPopup('Mousse Foundation',1200,'product5.jpeg')">
+<img src="product5.jpeg">
+<h3>Mousse Foundation</h3>
+<div class="price" data-price="1200">1,200 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Mousse Foundation',1200)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Makeup" onclick="openPopup('Matte Lip Kit',2250,'product6.jpeg')">
+<img src="product6.jpeg">
+<h3>Matte Lip Kit</h3>
+<div class="price" data-price="2250">2,250 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Matte Lip Kit',2250)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Makeup" onclick="openPopup('Fixing Spray',2500,'product2.jpeg')">
+<img src="product2.jpeg">
+<h3>Fixing Spray</h3>
+<div class="price" data-price="2500">2,500 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Fixing Spray',2500)">Add to Cart</button>
+</div>
+
+<!-- HAIR -->
+<div class="product" data-category="Hair" onclick="openPopup('Collagen Supplement',3,'product1.jpeg')">
+<img src="product1.jpeg">
+<h3>Collagen Supplement</h3>
+<div class="price" data-price="3">3 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Collagen Supplement',3)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Hair" onclick="openPopup('Argan Oil Hair Serum',2500,'product9.jpeg')">
+<img src="product9.jpeg">
+<h3>Argan Oil Hair Serum</h3>
+<div class="price" data-price="2500">2,500 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Argan Oil Hair Serum',2500)">Add to Cart</button>
+</div>
+
+<!-- BROWS -->
+<div class="product" data-category="Brows" onclick="openPopup('Eyebrow Gel',2500,'product11.jpeg')">
+<img src="product11.jpeg">
+<h3>Eyebrow Gel</h3>
+<div class="price" data-price="2500">2,500 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Eyebrow Gel',2500)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Brows" onclick="openPopup('Brow Marker LYKD',1250,'product12.jpeg')">
+<img src="product12.jpeg">
+<h3>Brow Marker LYKD</h3>
+<div class="price" data-price="1250">1,250 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Brow Marker LYKD',1250)">Add to Cart</button>
+</div>
+
+<!-- MAKEUP GOLD SERIES -->
+<div class="product" data-category="Makeup" onclick="openPopup('Golden Rose Lip Liner',1000,'product13.jpeg')">
+<img src="product13.jpeg">
+<h3>Golden Rose Lip Liner</h3>
+<div class="price" data-price="1000">1,000 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Golden Rose Lip Liner',1000)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Makeup" onclick="openPopup('ISADORA MAKEUP SET',6800,'product8.jpeg')">
+<img src="product8.jpeg">
+<h3>ISADORA MAKEUP SET</h3>
+<div class="price" data-price="6800">6,800 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('ISADORA MAKEUP SET',6800)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Makeup" onclick="openPopup('Hydrating Primer Essence',1150,'product10.jpeg')">
+<img src="product10.jpeg">
+<h3>Hydrating Primer Essence</h3>
+<div class="price" data-price="1150">1,150 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Hydrating Primer Essence',1150)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Makeup" onclick="openPopup('Waterproof Mascara Essence',1200,'product16.jpeg')">
+<img src="product16.jpeg">
+<h3>Waterproof Mascara Essence</h3>
+<div class="price" data-price="1200">1,200 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Waterproof Mascara Essence',1200)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Makeup" onclick="openPopup('Volume Mascara',1200,'product17.jpeg')">
+<img src="product17.jpeg">
+<h3>Volume Mascara</h3>
+<div class="price" data-price="1200">1,200 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Volume Mascara',1200)">Add to Cart</button>
+</div>
+
+<div class="product" data-category="Brows" onclick="openPopup('Eyebrow Gel Mascara',900,'product18.jpeg')">
+<img src="product18.jpeg">
+<h3>Eyebrow Gel Mascara</h3>
+<div class="price" data-price="900">0.900 KD</div>
+<button class="order-btn" onclick="event.stopPropagation(); addToCart('Eyebrow Gel Mascara',900)">Add to Cart</button>
+</div>
+
+</section>
+
+<!-- CART -->
+<div id="cartModal">
+<h3>Shopping Cart</h3>
+<div id="cartItems"></div>
+<div>
+<input type="text" id="promoInput" placeholder="Enter promo code">
+<button onclick="applyPromo()">Apply</button>
+</div>
+<div>Total: <span id="cartTotal">0</span> KD</div>
+<button onclick="checkoutWhatsApp()" style="background:#25D366;color:#fff;width:100%">WhatsApp Checkout</button>
+<button onclick="toggleCart()" style="width:100%;margin-top:5px">Close</button>
+</div>
+
+<!-- PRODUCT POPUP -->
+<div id="productPopup">
+<div class="box">
+<span onclick="closePopup()">✖</span>
+<img id="popupImg" width="120">
+<h3 id="popupName"></h3>
+<p id="popupPrice"></p>
+<button class="order-btn" id="popupBtn">Add</button>
+</div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+<div class="socials">
+<a href="https://www.instagram.com/luma.kw2" target="_blank">
+<img src="insta.jpg"> @Luma.Kw2
+</a>
+<br><br>
+<a href="https://wa.me/96567728554" target="_blank">
+<img src="product7.jpg"> 67728554
+</a>
+</div>
+</footer>
+
+<script>
+// ACCOUNT & LOGIN
+let cart=JSON.parse(localStorage.getItem('cart'))||[];
+let promoApplied=JSON.parse(localStorage.getItem('promoApplied'))||false;
+function register(){ const u=document.getElementById('username').value.trim(); const p=document.getElementById('password').value.trim(); if(!u||!p)return alert("Enter username/password"); let users=JSON.parse(localStorage.getItem('users')||'{}'); if(users[u])return alert("User exists"); users[u]={password:p}; localStorage.setItem('users',JSON.stringify(users)); alert("Registered!"); }
+function login(){ const u=document.getElementById('username').value.trim(); const p=document.getElementById('password').value.trim(); let users=JSON.parse(localStorage.getItem('users')||'{}'); if(users[u] && users[u].password===p){ localStorage.setItem('loggedInUser',u); document.getElementById('welcome').innerText="Welcome, "+u; alert("Logged in!"); } else alert("Wrong credentials"); }
+function checkLogin(){ const u=localStorage.getItem('loggedInUser'); if(u)document.getElementById('welcome').innerText="Welcome, "+u; }
+checkLogin();
+
+// LANG & DARK
+function setLang(l){document.querySelectorAll('.lang').forEach(e=>e.classList.remove('active'));document.getElementById(l).classList.add('active');}
+function toggleDark(){document.body.classList.toggle('dark');}
+
+// FILTER & SEARCH
+function filterCategory(c){document.querySelectorAll('.product').forEach(p=>{p.style.display=(c==='All'||p.dataset.category===c)?'block':'none';});}
+function searchProducts(){const t=document.querySelector('.lang.active input').value.toLowerCase();document.querySelectorAll('.product').forEach(p=>{p.style.display=p.querySelector('h3').innerText.toLowerCase().includes(t)?'block':'none';});}
+
+// CART
+function addToCart(n,p){const i=cart.find(x=>x.name===n);i?i.qty++:cart.push({name:n,price:p,qty:1});saveCart();}
+function removeFromCart(n){cart=cart.filter(i=>i.name!==n);saveCart();}
+function renderCart(){const container=document.getElementById('cartItems'); container.innerHTML=''; let total=0; cart.forEach(i=>{total+=i.price*i.qty; container.innerHTML+=`<div class="cart-item">${i.name} x${i.qty} - ${i.price*i.qty} KD</div>`;}); if(promoApplied) total*=0.85; document.getElementById('cartTotal').innerText=total.toLocaleString(); document.getElementById('cartCount').innerText=cart.reduce((s,i)=>s+i.qty,0);}
+function toggleCart(){const modal=document.getElementById('cartModal');modal.style.display=modal.style.display==='block'?'none':'block';}
+function saveCart(){localStorage.setItem('cart',JSON.stringify(cart));localStorage.setItem('promoApplied',JSON.stringify(promoApplied));renderCart();}
+function applyPromo(){const code=document.getElementById('promoInput').value.trim().toUpperCase();if(code==='FIRST15' && !promoApplied){promoApplied=true; alert("Promo applied! 15% off."); saveCart();}else if(promoApplied){alert("Already applied");} else{alert("Invalid code");}}
+function checkoutWhatsApp(){if(cart.length===0)return alert("Cart empty!"); let msg="Hello Luma 💄%0AHere are my products:%0A"; cart.forEach(i=>msg+=`${i.name} x${i.qty} - ${i.price*i.qty} KD%0A`); if(promoApplied) msg+="%0APromo 15% applied!%0A"; msg+="%0ATotal: "+document.getElementById('cartTotal').innerText; window.open(`https://wa.me/96567728554?text=${msg}`,"_blank");}
+
+// PRODUCT POPUP
+function openPopup(n,p,i){popupName.innerText=n; popupPrice.innerText=p+" KD"; popupImg.src=i; popupBtn.onclick=()=>addToCart(n,p); productPopup.style.display='block';}
+function closePopup(){productPopup.style.display='none';}
+
+// INIT
+renderCart();
+</script>
+
+</body>
+</html>
+
